@@ -5,26 +5,25 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.os.StrictMode
 import android.provider.MediaStore
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.wcp.pickmutipleimage.delegade.OnReturnImageUri
+import com.wcp.pickmutipleimage.delegade.OnSelectImageFromCamera
+import com.wcp.pickmutipleimage.delegade.OnSelectImageFromGallery
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
-import java.io.FileNotFoundException
-import java.io.IOException
-import java.io.InputStream
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity() , OnSelectImageFromGallery , OnSelectImageFromCamera {
 
-    private lateinit var imageAdapter: ImageAdapter
+    private lateinit var delegate : OnReturnImageUri
 
     private var imagePath: Uri? = null
+
 
     companion object {
         private const val MY_REQUEST_CODE = 222
@@ -36,24 +35,20 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        setAdapter()
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.frameLayout, ImagePickerFragment.newInstance() ,ImagePickerFragment.FRAG)
+            .commit()
 
-        btnGallery.setOnClickListener {
+      /*  btnGallery.setOnClickListener {
             selectUserImageFromGallery()
         }
 
         btnCamera.setOnClickListener {
             selectUserImageFromCamera()
-        }
+        }*/
     }
 
-    private fun setAdapter() {
-        imageAdapter = ImageAdapter(this@MainActivity)
-        recyclerView.setHasFixedSize(true)
-        recyclerView.layoutManager =
-            LinearLayoutManager(this@MainActivity, LinearLayoutManager.HORIZONTAL, false)
-        recyclerView.adapter = imageAdapter
-    }
+
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
@@ -99,13 +94,15 @@ class MainActivity : AppCompatActivity() {
             imagePath = data.data
             var resource: Bitmap =MediaStore.Images.Media.getBitmap(this.contentResolver, imagePath)
             imagePath = CompressUtil.compressImageUri(this, resource)
-            imageAdapter.setImageUriList(imagePath!!)
+            selectedImageUri(imagePath!!)
+           // imageAdapter.setImageUri(imagePath!!)
         }
         if (requestCode == CAMERA_REQUEST && resultCode == Activity.RESULT_OK) {
             var resource: Bitmap =
                 MediaStore.Images.Media.getBitmap(this.contentResolver, imagePath)
             imagePath = CompressUtil.compressImageUri(this, resource)
-            imageAdapter.setImageUriList(imagePath!!)
+            selectedImageUri(imagePath!!)
+           // imageAdapter.setImageUri(imagePath!!)
         }
 
     }
@@ -129,5 +126,19 @@ class MainActivity : AppCompatActivity() {
     private fun strictModeOn() {
         val builder = StrictMode.VmPolicy.Builder()
         StrictMode.setVmPolicy(builder.build())
+    }
+
+    override fun onPickImage(onReturnImageUri: OnReturnImageUri) {
+        selectUserImageFromGallery()
+        this.delegate = onReturnImageUri
+    }
+
+    private fun selectedImageUri(imagePath: Uri) {
+        delegate.imageUri(imagePath)
+    }
+
+    override fun onCaptureImage(onReturnImageUri: OnReturnImageUri) {
+        selectUserImageFromCamera()
+        this.delegate = onReturnImageUri
     }
 }

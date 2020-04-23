@@ -66,7 +66,7 @@ class ImageAdapter(
 
     override fun getItemCount() = imageUriList.size
 
-    fun setImageUriList(uri: Uri) {
+    fun setImageUri(uri: Uri) {
         imageUriList.add(uri)
     }
 
@@ -74,6 +74,10 @@ class ImageAdapter(
         RecyclerView.ViewHolder(itemView) {
         fun bind(imageUri: Uri) {
             Picasso.get().load(imageUri).into(itemView.imageView)
+            itemView.ivClear.setOnClickListener {
+                imageUriList.remove(imageUri)
+                notifyDataSetChanged()
+            }
         }
     }
 
